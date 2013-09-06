@@ -17,7 +17,6 @@
        (not (file-writable-p (buffer-file-name))))
       (sudoedit-and-close)))
 
-(defun set-auto-tramp ()
-  (add-hook 'find-file-hook 'auto-tramp))
+(add-hook 'find-file-hook 'auto-tramp)
 
-(provide 'auto-tramp)
+(provide 'root-tramp)
