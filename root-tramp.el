@@ -17,7 +17,7 @@
       (sudoedit file-name))))
 
 (defun auto-tramp-file ()
-  (unless (or (string-match "^/sudo::" (buffer-file-name))
+  (unless (or (string-match "^/sudo:" (buffer-file-name))
 	      (file-writable-p (buffer-file-name)))
     (sudoedit-and-close)))
 
