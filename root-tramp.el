@@ -7,7 +7,8 @@
   (interactive "i")
   (if s
       (find-file (tramp-path s))
-    (find-file (tramp-path (buffer-file-name)))))
+    (let ((current-path (or (buffer-file-name) list-buffers-directory)))
+      (find-file (tramp-path current-path)))))
 
 (defun sudoedit-and-close ()
   (interactive)
