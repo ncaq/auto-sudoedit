@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 (require 'tramp)
 
 (defun tramp-path (s)
