@@ -8,17 +8,18 @@
 (defun current-path ()
   (or (buffer-file-name) list-buffers-directory))
 
-(defun sudoedit (s)
-  (interactive "i")
-  (if s
-      (find-file (tramp-path s))
-    (find-file (tramp-path (current-path)))))
+(defun sudoedit ()
+  (interactive)
+  (find-file (tramp-path (current-path))))
+
+(defun sudoedit-1 (s)
+  (find-file (tramp-path s)))
 
 (defun sudoedit-and-close ()
   (interactive)
   (let ((old-buffer-name (current-path)))
     (kill-this-buffer)
-    (sudoedit old-buffer-name)))
+    (sudoedit-1 old-buffer-name)))
 
 (defun auto-sudoedit-and-close ()
   (if (or (f-writable? (current-path))
