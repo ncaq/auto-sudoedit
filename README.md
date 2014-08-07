@@ -1,7 +1,9 @@
-emacs-auto-tramp-when-open-root-file
+auto-sudoedit
 ====================================
 
-name only
+```elisp
+(require 'auto-sudoedit)
+```
 
 Copyright 2013 ncaq
 GPLv3
