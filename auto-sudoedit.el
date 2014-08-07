@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t -*-
+
 (require 'tramp)
+
 (require 'f)
 
 (defun tramp-path (s)
@@ -15,19 +17,19 @@
 (defun sudoedit-1 (s)
   (find-file (tramp-path s)))
 
-(defun sudoedit-and-close ()
+(defun sudoedit-and-kill ()
   (interactive)
   (let ((old-buffer-name (current-path)))
     (kill-this-buffer)
     (sudoedit-1 old-buffer-name)))
 
-(defun auto-sudoedit-and-close ()
+(defun auto-sudoedit ()
   (if (or (f-writable? (current-path))
           (tramp-tramp-file-p (current-path)))
       ()
-    (sudoedit-and-close)))
+    (sudoedit-and-kill)))
 
-(add-hook 'find-file-hook  'auto-sudoedit-and-close)
-(add-hook 'dired-mode-hook 'auto-sudoedit-and-close)
+(add-hook 'find-file-hook  'auto-sudoedit)
+(add-hook 'dired-mode-hook 'auto-sudoedit)
 
-(provide 'root-tramp)
+(provide 'auto-sudoedit)
