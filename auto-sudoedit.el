@@ -27,8 +27,8 @@
     (sudoedit-and-kill)))
 
 ;;;###autoload
-(add-hook 'find-file-hook  'auto-sudoedit t)
+(add-hook 'find-file-hook  'auto-sudoedit)
 ;;;###autoload
-(add-hook 'dired-mode-hook 'auto-sudoedit t)
+(add-hook 'dired-mode-hook 'auto-sudoedit)
 
 (provide 'auto-sudoedit)

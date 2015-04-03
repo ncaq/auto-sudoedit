@@ -3,8 +3,8 @@
 ;;; Code:
 
 
-;;;### (autoloads (auto-sudoedit) "auto-sudoedit" "auto-sudoedit.el"
-;;;;;;  (21549 19309 969362 116000))
+;;;### (autoloads nil "auto-sudoedit" "auto-sudoedit.el" (21790 38408
+;;;;;;  818578 983000))
 ;;; Generated autoloads from auto-sudoedit.el
 
 (autoload 'auto-sudoedit "auto-sudoedit" "\
@@ -12,9 +12,9 @@
 
 \(fn)" nil nil)
 
-(add-hook 'find-file-hook 'auto-sudoedit t)
+(add-hook 'find-file-hook 'auto-sudoedit)
 
-(add-hook 'dired-mode-hook 'auto-sudoedit t)
+(add-hook 'dired-mode-hook 'auto-sudoedit)
 
 ;;;***
 
