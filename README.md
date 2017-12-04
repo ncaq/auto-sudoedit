@@ -1,9 +1,5 @@
-auto-sudoedit
-====================================
+# auto-sudoedit
 
-```elisp
+```el
 (require 'auto-sudoedit-autoloads)
 ```
-
-Copyright 2013 ncaq
-GPLv3
