@@ -16,16 +16,20 @@
 (require 'tramp)
 
 (defun auto-sudoedit-tramp-path (s)
+  "Argument S is tramp sudo path."
   (concat "/sudo::" s))
 
 (defun auto-sudoedit-current-path ()
+  "Current path file or dir."
   (or (buffer-file-name) list-buffers-directory))
 
 (defun auto-sudoedit-sudoedit (s)
+  "Open sudoedit.  Argument S is path."
   (interactive (auto-sudoedit-current-path))
   (find-file (auto-sudoedit-tramp-path s)))
 
 (defun auto-sudoedit-sudoedit-and-kill ()
+  "Open sudoedit and kill."
   (interactive)
   (let ((old-buffer-name (auto-sudoedit-current-path)))
     (kill-this-buffer)
@@ -33,6 +37,7 @@
 
 ;;;###autoload
 (defun auto-sudoedit ()
+  "`auto-sudoedit' hook."
   (if (or (f-writable? (auto-sudoedit-current-path))
           (tramp-tramp-file-p (auto-sudoedit-current-path)))
       ()
