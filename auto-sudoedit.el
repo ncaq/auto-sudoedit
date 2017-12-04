@@ -1,5 +1,12 @@
 ;; -*- lexical-binding: t -*-
 
+;; Description: auto sudo edit by tramp when find not writable file
+;; Author: ncaq <ncaq@ncaq.net>
+;; Maintainer: ncaq <ncaq@ncaq.net>
+;; Version: 0.0.0
+;; URL: https://github.com/ncaq/auto-sudoedit
+;; Package-Requires: ((f "0.19.0"))
+
 (require 'f)
 (require 'tramp)
 
