@@ -1,37 +1,42 @@
-;; -*- lexical-binding: t -*-
+;;; auto-sudoedit.el --- auto sudo edit by tramp -*- lexical-binding: t -*-
 
-;; Description: auto sudo edit by tramp when find not writable file
 ;; Author: ncaq <ncaq@ncaq.net>
-;; Maintainer: ncaq <ncaq@ncaq.net>
 ;; Version: 0.0.0
+;; Package-Requires: ((emacs "24")(f "0.19.0"))
 ;; URL: https://github.com/ncaq/auto-sudoedit
-;; Package-Requires: ((f "0.19.0"))
+
+;;; Commentary:
+
+;; when find-file-hook and dired-mode-hook, and current path not writable
+;; re-open tramp sudo edit automatic
+
+;;; Code:
 
 (require 'f)
 (require 'tramp)
 
-(defun tramp-path (s)
+(defun auto-sudoedit-tramp-path (s)
   (concat "/sudo::" s))
 
-(defun current-path ()
+(defun auto-sudoedit-current-path ()
   (or (buffer-file-name) list-buffers-directory))
 
-(defun sudoedit (s)
-  (interactive (current-path))
-  (find-file (tramp-path s)))
+(defun auto-sudoedit-sudoedit (s)
+  (interactive (auto-sudoedit-current-path))
+  (find-file (auto-sudoedit-tramp-path s)))
 
-(defun sudoedit-and-kill ()
+(defun auto-sudoedit-sudoedit-and-kill ()
   (interactive)
-  (let ((old-buffer-name (current-path)))
+  (let ((old-buffer-name (auto-sudoedit-current-path)))
     (kill-this-buffer)
-    (sudoedit old-buffer-name)))
+    (auto-sudoedit-sudoedit old-buffer-name)))
 
 ;;;###autoload
 (defun auto-sudoedit ()
-  (if (or (f-writable? (current-path))
-          (tramp-tramp-file-p (current-path)))
+  (if (or (f-writable? (auto-sudoedit-current-path))
+          (tramp-tramp-file-p (auto-sudoedit-current-path)))
       ()
-    (sudoedit-and-kill)))
+    (auto-sudoedit-sudoedit-and-kill)))
 
 ;;;###autoload
 (add-hook 'find-file-hook  'auto-sudoedit)
@@ -39,3 +44,5 @@
 (add-hook 'dired-mode-hook 'auto-sudoedit)
 
 (provide 'auto-sudoedit)
+
+;;; auto-sudoedit.el ends here
