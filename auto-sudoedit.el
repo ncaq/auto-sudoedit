@@ -37,9 +37,9 @@
 
 (defun auto-sudoedit ()
   "`auto-sudoedit' hook."
-  (if (or (f-writable? (auto-sudoedit-current-path))
-          (tramp-tramp-file-p (auto-sudoedit-current-path)))
-      ()
+  (unless (or
+           (f-writable? (auto-sudoedit-current-path))
+           (tramp-tramp-file-p (auto-sudoedit-current-path)))
     (auto-sudoedit-sudoedit-and-kill)))
 
 ;;;###autoload
