@@ -35,7 +35,6 @@
     (kill-this-buffer)
     (auto-sudoedit-sudoedit old-buffer-name)))
 
-;;;###autoload
 (defun auto-sudoedit ()
   "`auto-sudoedit' hook."
   (if (or (f-writable? (auto-sudoedit-current-path))
@@ -44,9 +43,19 @@
     (auto-sudoedit-sudoedit-and-kill)))
 
 ;;;###autoload
-(add-hook 'find-file-hook  'auto-sudoedit)
-;;;###autoload
-(add-hook 'dired-mode-hook 'auto-sudoedit)
+(define-minor-mode
+  auto-sudoedit-mode
+  "automatic do sudo by tramp when need root file"
+  :init-value 1
+  :lighter " ASE"
+  (if auto-sudoedit-mode
+      (progn
+        (add-hook 'find-file-hook  'auto-sudoedit)
+        (add-hook 'dired-mode-hook 'auto-sudoedit)
+        )
+    (remove-hook 'find-file-hook  'auto-sudoedit)
+    (remove-hook 'dired-mode-hook 'auto-sudoedit)
+    ))
 
 (provide 'auto-sudoedit)
 
