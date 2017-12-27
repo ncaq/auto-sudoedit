@@ -46,7 +46,7 @@
 (define-minor-mode
   auto-sudoedit-mode
   "automatic do sudo by tramp when need root file"
-  :init-value 1
+  :init-value 0
   :lighter " ASE"
   (if auto-sudoedit-mode
       (progn
