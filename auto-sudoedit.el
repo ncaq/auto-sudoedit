@@ -39,7 +39,7 @@
   "`auto-sudoedit' hook."
   (let ((curr-path (auto-sudoedit-current-path)))
     (unless (or
-             (f-writable? curr-path)
+             (f-traverse-upwards #'f-writable? curr-path)
              (tramp-tramp-file-p curr-path))
       (auto-sudoedit-sudoedit-and-kill))))
 
