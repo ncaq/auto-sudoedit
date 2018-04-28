@@ -37,10 +37,11 @@
 
 (defun auto-sudoedit ()
   "`auto-sudoedit' hook."
-  (unless (or
-           (f-writable? (auto-sudoedit-current-path))
-           (tramp-tramp-file-p (auto-sudoedit-current-path)))
-    (auto-sudoedit-sudoedit-and-kill)))
+  (let ((curr-path (auto-sudoedit-current-path)))
+    (unless (or
+             (f-traverse-upwards #'f-writable? curr-path)
+             (tramp-tramp-file-p curr-path))
+      (auto-sudoedit-sudoedit-and-kill))))
 
 ;;;###autoload
 (define-minor-mode
