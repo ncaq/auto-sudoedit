@@ -38,8 +38,12 @@
 (defun auto-sudoedit ()
   "`auto-sudoedit' hook."
   (let ((curr-path (auto-sudoedit-current-path)))
-    ;; Don't activate for tramp files
-    (unless (tramp-tramp-file-p curr-path)
+    (unless
+        (or
+         ;; Don't activate for tramp files
+         (tramp-tramp-file-p curr-path)
+         ;; Don't activate on sudo do not exist
+         (not (executable-find "sudo")))
       ;; Current path may not exist; back up to the first existing parent
       ;; and see if it's writable
       (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
