@@ -1,3 +1,5 @@
+[![MELPA](https://melpa.org/packages/auto-sudoedit-badge.svg)](https://melpa.org/#/auto-sudoedit)
+
 # auto-sudoedit
 
 自動的にsudoでファイルを開き直すパッケージです.
