@@ -24,9 +24,9 @@
   (interactive (auto-sudoedit-current-path))
   (find-file (auto-sudoedit-tramp-path s)))
 
-(defun auto-sudoedit (_old_func &rest _args)
+(defun auto-sudoedit (orig-func &rest args)
   "`auto-sudoedit' around-advice."
-  (let ((curr-path (car _args)))
+  (let ((curr-path (car args)))
     (if (not
          (or
           ;; Don't activate for tramp files
@@ -38,9 +38,9 @@
         (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
           (if (not (and first-existing-path (f-writable? first-existing-path)))
               (let ((tramp-path (auto-sudoedit-tramp-path curr-path)))
-                (apply _old_func tramp-path (cdr _args)))
-            (apply _old_func _args)))
-      (apply _old_func _args))))
+                (apply orig-func tramp-path (cdr args)))
+            (apply orig-func args)))
+      (apply orig-func args))))
 
 ;;;###autoload
 (define-minor-mode
