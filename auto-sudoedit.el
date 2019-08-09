@@ -19,36 +19,28 @@
   "Argument S is tramp sudo path."
   (concat "/sudo::" s))
 
-(defun auto-sudoedit-current-path ()
-  "Current path file or dir."
-  (or (buffer-file-name) list-buffers-directory))
-
 (defun auto-sudoedit-sudoedit (s)
   "Open sudoedit.  Argument S is path."
   (interactive (auto-sudoedit-current-path))
   (find-file (auto-sudoedit-tramp-path s)))
 
-(defun auto-sudoedit-sudoedit-and-kill ()
-  "Open sudoedit and kill."
-  (interactive)
-  (let ((old-buffer-name (auto-sudoedit-current-path)))
-    (kill-this-buffer)
-    (auto-sudoedit-sudoedit old-buffer-name)))
-
-(defun auto-sudoedit ()
-  "`auto-sudoedit' hook."
-  (let ((curr-path (auto-sudoedit-current-path)))
-    (unless
-        (or
-         ;; Don't activate for tramp files
-         (tramp-tramp-file-p curr-path)
-         ;; Don't activate on sudo do not exist
-         (not (executable-find "sudo")))
-      ;; Current path may not exist; back up to the first existing parent
-      ;; and see if it's writable
-      (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
-        (unless (and first-existing-path (f-writable? first-existing-path))
-          (auto-sudoedit-sudoedit-and-kill))))))
+(defun auto-sudoedit (orig-func &rest args)
+  "`auto-sudoedit' around-advice."
+  (let ((curr-path (car args)))
+    (if (not
+         (or
+          ;; Don't activate for tramp files
+          (tramp-tramp-file-p curr-path)
+          ;; Don't activate on sudo do not exist
+          (not (executable-find "sudo"))))
+        ;; Current path may not exist; back up to the first existing parent
+        ;; and see if it's writable
+        (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
+          (if (not (and first-existing-path (f-writable? first-existing-path)))
+              (let ((tramp-path (auto-sudoedit-tramp-path curr-path)))
+                (apply orig-func tramp-path (cdr args)))
+            (apply orig-func args)))
+      (apply orig-func args))))
 
 ;;;###autoload
 (define-minor-mode
@@ -58,12 +50,10 @@
   :lighter " ASE"
   (if auto-sudoedit-mode
       (progn
-        (add-hook 'find-file-hook  'auto-sudoedit)
-        (add-hook 'dired-mode-hook 'auto-sudoedit)
-        )
-    (remove-hook 'find-file-hook  'auto-sudoedit)
-    (remove-hook 'dired-mode-hook 'auto-sudoedit)
-    ))
+        (advice-add 'find-file :around 'auto-sudoedit)
+        (advice-add 'dired :around 'auto-sudoedit))
+    (advice-remove 'find-file 'auto-sudoedit)
+    (advice-remove 'dired 'auto-sudoedit)))
 
 (provide 'auto-sudoedit)
 
