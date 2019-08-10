@@ -24,15 +24,19 @@
   (interactive (auto-sudoedit-current-path))
   (find-file (auto-sudoedit-tramp-path s)))
 
+(defun auto-sudoedit-should-activate (curr-path)
+  "Return non-nil if auto-sudoedit should activate for CURR-PATH."
+  (not
+   (or
+    ;; Don't activate for tramp files
+    (tramp-tramp-file-p curr-path)
+    ;; Don't activate on sudo do not exist
+    (not (executable-find "sudo")))))
+
 (defun auto-sudoedit (orig-func &rest args)
   "`auto-sudoedit' around-advice."
   (let ((curr-path (car args)))
-    (if (not
-         (or
-          ;; Don't activate for tramp files
-          (tramp-tramp-file-p curr-path)
-          ;; Don't activate on sudo do not exist
-          (not (executable-find "sudo"))))
+    (if (auto-sudoedit-should-activate curr-path)
         ;; Current path may not exist; back up to the first existing parent
         ;; and see if it's writable
         (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
