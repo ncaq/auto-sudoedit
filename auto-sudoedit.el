@@ -19,6 +19,10 @@
   "Argument S is tramp sudo path."
   (concat "/sudo::" s))
 
+(defun auto-sudoedit-current-path ()
+  "Current path file or dir."
+  (or (buffer-file-name) list-buffers-directory))
+
 (defun auto-sudoedit-sudoedit (s)
   "Open sudoedit.  Argument S is path."
   (interactive (auto-sudoedit-current-path))
