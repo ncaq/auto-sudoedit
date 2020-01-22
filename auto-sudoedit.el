@@ -25,7 +25,7 @@
 
 (defun auto-sudoedit-sudoedit (s)
   "Open sudoedit.  Argument S is path."
-  (interactive (auto-sudoedit-current-path))
+  (interactive (list (auto-sudoedit-current-path)))
   (find-file (auto-sudoedit-tramp-path s)))
 
 (defun auto-sudoedit-should-activate (curr-path)
