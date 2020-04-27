@@ -1,4 +1,4 @@
-;;; auto-sudoedit.el --- auto sudo edit by tramp -*- lexical-binding: t -*-
+;;; auto-sudoedit.el --- Auto sudo edit by tramp -*- lexical-binding: t -*-
 
 ;; Author: ncaq <ncaq@ncaq.net>
 ;; Version: 0.0.0
@@ -38,7 +38,9 @@
     (not (executable-find "sudo")))))
 
 (defun auto-sudoedit (orig-func &rest args)
-  "`auto-sudoedit' around-advice."
+  "`auto-sudoedit' around-advice.
+Argument ORIG-FUNC is original function.
+Argument ARGS is original function arguments."
   (let ((curr-path (car args)))
     (if (auto-sudoedit-should-activate curr-path)
         ;; Current path may not exist; back up to the first existing parent
