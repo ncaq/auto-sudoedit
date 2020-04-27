@@ -1,7 +1,7 @@
 ;;; auto-sudoedit.el --- Auto sudo edit by tramp -*- lexical-binding: t -*-
 
 ;; Author: ncaq <ncaq@ncaq.net>
-;; Version: 0.0.0
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "24.4")(f "0.19.0"))
 ;; URL: https://github.com/ncaq/auto-sudoedit
 
