@@ -1,8 +1,8 @@
 ;;; auto-sudoedit.el --- Auto sudo edit by tramp -*- lexical-binding: t -*-
 
 ;; Author: ncaq <ncaq@ncaq.net>
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "24.4")(f "0.19.0"))
+;; Version: 1.1.0
+;; Package-Requires: ((emacs "26.1")(f "0.19.0"))
 ;; URL: https://github.com/ncaq/auto-sudoedit
 
 ;;; Commentary:
@@ -15,41 +15,72 @@
 (require 'f)
 (require 'tramp)
 
-(defun auto-sudoedit-tramp-path (s)
-  "Argument S is tramp sudo path."
-  (concat "/sudo::" s))
+(defun auto-sudoedit-path (curr-path)
+  "To convert path to tramp using sudo path.
+Argument CURR-PATH is current path.
+The result is string or nil.
+The nil when will be not able to connect by sudo."
+  ;; trampのpathに変換します
+  (let ((tramp-path
+         (if (tramp-tramp-file-p curr-path)
+             (auto-sudoedit-path-from-tramp-ssh-like curr-path)
+           (concat "/sudo::" curr-path))))
+    (if (and
+         ;; Current path may not exist; back up to the first existing parent
+         ;; and see if it's writable
+         (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
+           (not (and first-existing-path (f-writable? first-existing-path))))
+         ;; 変換前のパスと同じでなく(2回めの変換はしない)
+         (not (equal curr-path tramp-path))
+         ;; sudoで開ける場合は変換したものを返します
+         (f-writable? tramp-path))
+        tramp-path
+      nil)))
+
+(defun auto-sudoedit-path-from-tramp-ssh-like (curr-path)
+  "Argument CURR-PATH is tramp path(that use protocols such as ssh)."
+  (let* ((file-name (tramp-dissect-file-name curr-path))
+         (method (tramp-file-name-method file-name))
+         (user (tramp-file-name-user file-name))
+         (host (tramp-file-name-host file-name))
+         (port (tramp-file-name-port file-name))
+         (localname (tramp-file-name-localname file-name))
+         (hop (tramp-file-name-hop file-name))
+         (new-method "sudo")
+         (new-user "root")
+         (new-host host)
+         (new-port port)
+         (new-localname localname)
+         (new-hop (format "%s%s%s:%s%s|" (or hop "") method (if user (concat user "@") "") host (if port (concat port "#") ""))))
+    ;; 最終メソッドがsudoである場合それ以上の変換は無意味なので行わない。
+    (if (equal method "sudo")
+        curr-path
+      (tramp-make-tramp-file-name
+       (make-tramp-file-name
+        :method new-method
+        :user new-user
+        :host new-host
+        :port new-port
+        :localname new-localname
+        :hop new-hop)))))
 
 (defun auto-sudoedit-current-path ()
   "Current path file or dir."
   (or (buffer-file-name) list-buffers-directory))
 
-(defun auto-sudoedit-sudoedit (s)
-  "Open sudoedit.  Argument S is path."
+(defun auto-sudoedit-sudoedit (curr-path)
+  "Open sudoedit.  Argument CURR-PATH is path."
   (interactive (list (auto-sudoedit-current-path)))
-  (find-file (auto-sudoedit-tramp-path s)))
-
-(defun auto-sudoedit-should-activate (curr-path)
-  "Return non-nil if auto-sudoedit should activate for CURR-PATH."
-  (not
-   (or
-    ;; Don't activate for tramp files
-    (tramp-tramp-file-p curr-path)
-    ;; Don't activate on sudo do not exist
-    (not (executable-find "sudo")))))
+  (find-file (auto-sudoedit-path curr-path)))
 
 (defun auto-sudoedit (orig-func &rest args)
   "`auto-sudoedit' around-advice.
 Argument ORIG-FUNC is original function.
 Argument ARGS is original function arguments."
-  (let ((curr-path (car args)))
-    (if (auto-sudoedit-should-activate curr-path)
-        ;; Current path may not exist; back up to the first existing parent
-        ;; and see if it's writable
-        (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
-          (if (not (and first-existing-path (f-writable? first-existing-path)))
-              (let ((tramp-path (auto-sudoedit-tramp-path curr-path)))
-                (apply orig-func tramp-path (cdr args)))
-            (apply orig-func args)))
+  (let* ((curr-path (car args))
+         (tramp-path (auto-sudoedit-path curr-path)))
+    (if tramp-path
+        (apply orig-func tramp-path (cdr args))
       (apply orig-func args))))
 
 ;;;###autoload
