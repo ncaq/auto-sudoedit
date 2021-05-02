@@ -30,12 +30,15 @@
 
 (defun auto-sudoedit-should-activate (curr-path)
   "Return non-nil if auto-sudoedit should activate for CURR-PATH."
-  (not
-   (or
-    ;; Don't activate for tramp files
-    (tramp-tramp-file-p curr-path)
-    ;; Don't activate on sudo do not exist
-    (not (executable-find "sudo")))))
+  (and
+   ;; Don't activate for tramp files
+   (not (tramp-tramp-file-p curr-path))
+   ;; Don't activate on sudo do not exist
+   (executable-find "sudo")
+   ;; Current path may not exist; back up to the first existing parent
+   ;; and see if it's writable
+   (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
+     (not (and first-existing-path (f-writable? first-existing-path))))))
 
 (defun auto-sudoedit (orig-func &rest args)
   "`auto-sudoedit' around-advice.
@@ -43,13 +46,8 @@ Argument ORIG-FUNC is original function.
 Argument ARGS is original function arguments."
   (let ((curr-path (car args)))
     (if (auto-sudoedit-should-activate curr-path)
-        ;; Current path may not exist; back up to the first existing parent
-        ;; and see if it's writable
-        (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
-          (if (not (and first-existing-path (f-writable? first-existing-path)))
-              (let ((tramp-path (auto-sudoedit-tramp-path curr-path)))
-                (apply orig-func tramp-path (cdr args)))
-            (apply orig-func args)))
+        (let ((tramp-path (auto-sudoedit-tramp-path curr-path)))
+          (apply orig-func tramp-path (cdr args)))
       (apply orig-func args))))
 
 ;;;###autoload
