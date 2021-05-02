@@ -16,7 +16,7 @@
 (require 'tramp)
 
 (defun auto-sudoedit-tramp-path (s)
-  "Argument S is tramp sudo path."
+  "Argument S is normal path."
   (concat "/sudo::" s))
 
 (defun auto-sudoedit-current-path ()
