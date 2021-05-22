@@ -79,9 +79,10 @@ Argument ORIG-FUNC is original function.
 Argument ARGS is original function arguments."
   (let* ((curr-path (car args))
          (tramp-path (auto-sudoedit-path curr-path)))
-    (if tramp-path
-        (apply orig-func tramp-path (cdr args))
-      (apply orig-func args))))
+    (when curr-path
+      (if tramp-path
+          (apply orig-func tramp-path (cdr args))
+        (apply orig-func args)))))
 
 ;;;###autoload
 (define-minor-mode
