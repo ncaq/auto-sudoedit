@@ -12,10 +12,11 @@
 
 ;;; Code:
 
-(require 'f)
-(require 'tramp)
-(require 'recentf)
 (require 'dired)
+(require 'f)
+(require 'recentf)
+(require 'tramp)
+(require 'tramp-sh)
 
 (defun auto-sudoedit-path (curr-path)
   "To convert path to tramp using sudo path.
