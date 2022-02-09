@@ -18,6 +18,12 @@
 (require 'tramp)
 (require 'tramp-sh)
 
+(defcustom auto-sudoedit-ask
+  nil
+  "Ask for user confirmation when reopening?"
+  :group 'auto-sudoedit
+  :type 'boolean)
+
 (defun auto-sudoedit-path (curr-path)
   "To convert path to tramp using sudo path.
 Argument CURR-PATH is current path.
@@ -92,7 +98,13 @@ USER is nil, when we cannot open via sudo."
          (remote-info (auto-sudoedit-path curr-path))
          (user (car remote-info))
          (tramp-path (cdr remote-info)))
-    (when (and curr-path user tramp-path (y-or-n-p (format "This buffer belongs to user %s.  Reopen this buffer as user %s? " user user)))
+    (when (and
+           curr-path
+           user
+           tramp-path
+           (or
+            (not auto-sudoedit-ask)
+            (y-or-n-p (format "This buffer belongs to user %s.  Reopen this buffer as user %s? " user user))))
       ;; We have to tell emacs that this buffer now visits another file (actually the same one, just via tramp sudo)
       ;; We have to do things differently for normal files and for dired
       (when buffer-file-name
