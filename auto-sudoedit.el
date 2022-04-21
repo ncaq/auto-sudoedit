@@ -58,7 +58,8 @@ USER is nil, when we cannot open via sudo."
     (user-login-name)))
 
 (defun auto-sudoedit-path-from-tramp-ssh-like (curr-path new-user)
-  "Argument CURR-PATH is tramp path(that use protocols such as ssh).  NEW-USER is the user for sudo."
+  "Argument CURR-PATH is tramp path(that use protocols such as ssh).
+NEW-USER is the user for sudo."
   (let* ((file-name (tramp-dissect-file-name curr-path))
          (method (tramp-file-name-method file-name))
          (user (tramp-file-name-user file-name))
@@ -93,7 +94,8 @@ USER is nil, when we cannot open via sudo."
   (find-file (cdr (auto-sudoedit-path curr-path))))
 
 (defun auto-sudoedit ()
-  "`auto-sudoedit' hook for `find-file'.  Reopen the buffer via tramp with sudo method."
+  "`auto-sudoedit' hook for `find-file'.
+Reopen the buffer via tramp with sudo method."
   (let* ((curr-path (auto-sudoedit-current-path))
          (remote-info (auto-sudoedit-path curr-path))
          (user (car remote-info))
@@ -132,7 +134,7 @@ USER is nil, when we cannot open via sudo."
 ;;;###autoload
 (define-minor-mode
   auto-sudoedit-mode
-  "automatic do sudo by tramp when need root file"
+  "When sudo is required, it automatically reopens in tramp."
   :init-value 0
   :lighter " ASE"
   (if auto-sudoedit-mode
