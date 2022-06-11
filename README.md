@@ -34,6 +34,17 @@ If you enable minor mode,
 When you open a file that requires root privileges,
 It will be reopened automatically.
 
+## Recommend
+
+If you find the following message depressing
+
+~~~~
+Autosave file on local temporary directory, do you want to continue? (y or n) y
+~~~~
+
+On a non-shared PC, you can allow some security risk and use.
+Set `tramp-allow-unsafe-temporary-files` to `t`.
+
 # Japanese
 
 ## 概要
@@ -66,3 +77,15 @@ auto-sudoeditはマイナーモードが有効の時に動きます。
 マイナーモードを有効にしておけば、
 root権限が必要なファイルを開いたときに、
 自動で開き直されます。
+
+## 推奨
+
+もし以下のメッセージが鬱陶しいならば、
+
+~~~
+Autosave file on local temporary directory, do you want to continue? (y or n) y
+~~~
+
+共有してないPCでは多少のセキュリティリスクを許容して、
+`tramp-allow-unsafe-temporary-files`
+を`t`にするのをオススメします。
