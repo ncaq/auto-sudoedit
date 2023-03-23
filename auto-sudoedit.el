@@ -104,6 +104,7 @@ Reopen the buffer via tramp with sudo method."
            curr-path
            user
            tramp-path
+           (not (and (tramp-tramp-file-p curr-path) (tramp-sh-handle-file-writable-p curr-path)))
            (or
             (not auto-sudoedit-ask)
             (y-or-n-p (format "This buffer belongs to user %s.  Reopen this buffer as user %s? " user user))))
