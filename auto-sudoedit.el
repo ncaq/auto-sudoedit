@@ -136,6 +136,7 @@ Reopen the buffer via tramp with sudo method."
 (define-minor-mode
   auto-sudoedit-mode
   "When sudo is required, it automatically reopens in tramp."
+  :global t
   :init-value 0
   :lighter " ASE"
   (if auto-sudoedit-mode
