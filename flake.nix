@@ -103,10 +103,8 @@
 
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
-            inherit (pkgs)
-              emacsForIt
-              nix-fast-build
-              ;
+            inherit (pkgs) nix-fast-build;
+            inherit emacsForIt;
           };
 
           devShells.default = pkgs.mkShell {
