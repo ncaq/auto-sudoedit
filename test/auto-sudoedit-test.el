@@ -282,6 +282,23 @@
         (auto-sudoedit)
         (should (equal buffer-file-name original-name))))))
 
+(ert-deftest auto-sudoedit/tramp-not-writable-reopens ()
+  "Hook should reopen via sudo when tramp file is not writable."
+  (with-temp-buffer
+    (setq buffer-file-name "/ssh:host:/etc/hosts")
+    (let ((auto-sudoedit-ask nil)
+          (recentf-list nil)
+          revert-buffer-called)
+      (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+                ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
+                ((symbol-function 'tramp-tramp-file-p) (lambda (_) t))
+                ((symbol-function 'tramp-sh-handle-file-writable-p) (lambda (_) nil))
+                ((symbol-function 'set-visited-file-name) (lambda (path &optional _) (setq buffer-file-name path)))
+                ((symbol-function 'revert-buffer) (lambda (&rest _) (setq revert-buffer-called t))))
+        (auto-sudoedit)
+        (should (string-match-p "sudo:" buffer-file-name))
+        (should revert-buffer-called)))))
+
 (ert-deftest auto-sudoedit/dired-buffer-not-writable ()
   "Hook should update variable `dired-directory' when directory is owned by another user."
   (with-temp-buffer
@@ -291,17 +308,21 @@
     (setq default-directory "/root/")
     (let ((auto-sudoedit-ask nil)
           (recentf-list nil)
-          revert-buffer-args)
+          revert-buffer-args
+          unadvertise-called-with
+          advertise-called)
       (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
                 ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
                 ((symbol-function 'tramp-tramp-file-p) (lambda (_) nil))
-                ((symbol-function 'dired-unadvertise) (lambda (_) nil))
-                ((symbol-function 'dired-advertise) (lambda () nil))
+                ((symbol-function 'dired-unadvertise) (lambda (dir) (setq unadvertise-called-with dir)))
+                ((symbol-function 'dired-advertise) (lambda () (setq advertise-called t)))
                 ((symbol-function 'revert-buffer) (lambda (&rest args) (setq revert-buffer-args args))))
         (auto-sudoedit)
         (should (equal dired-directory "/sudo::/root/"))
         (should (equal list-buffers-directory "/sudo::/root/"))
         (should (equal default-directory "/sudo::/root/"))
+        (should (equal unadvertise-called-with "/root/"))
+        (should advertise-called)
         (should (equal revert-buffer-args '(t t)))))))
 
 (ert-deftest auto-sudoedit-mode/toggle ()
