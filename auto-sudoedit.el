@@ -26,7 +26,7 @@
 (defun auto-sudoedit-path (curr-path)
   "To convert path to tramp using sudo path.
 Argument CURR-PATH is current path.
-The result is a cons cell in the format '(USER . TRAMP-PATH).
+The result is a cons cell in the format \\='(USER . TRAMP-PATH).
 USER is nil, when we cannot open via sudo."
   ;; trampのpathに変換します
   (let* ((file-owner (auto-sudoedit-file-owner curr-path))
@@ -151,6 +151,7 @@ Reopen the buffer via tramp with sudo method."
 ;;;###autoload
 (define-minor-mode auto-sudoedit-mode
   "When sudo is required, it automatically reopens in tramp."
+  :group 'auto-sudoedit
   :global t
   :init-value 0
   :lighter
