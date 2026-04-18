@@ -32,16 +32,14 @@ USER is nil, when we cannot open via sudo."
   (let* ((file-owner (auto-sudoedit-file-owner curr-path))
          (tramp-path
           (if (tramp-tramp-file-p curr-path)
-              (auto-sudoedit-path-from-tramp-ssh-like
-               curr-path file-owner)
+              (auto-sudoedit-path-from-tramp-ssh-like curr-path file-owner)
             (concat "/sudo::" curr-path))))
     (if (and
          ;; We must know the file owner's login name
          ;; If we can't, we don't know which user to sudo as
          file-owner
          ;; The file owner must be different from our current user so that the sudo makes sense
-         (not
-          (string= file-owner (auto-sudoedit-current-user curr-path)))
+         (not (string= file-owner (auto-sudoedit-current-user curr-path)))
          ;; 変換前のパスと同じでなく(2回めの変換はしない)
          (not (equal curr-path tramp-path)))
         (cons file-owner tramp-path)
@@ -110,20 +108,10 @@ Reopen the buffer via tramp with sudo method."
          (remote-info (auto-sudoedit-path curr-path))
          (user (car remote-info))
          (tramp-path (cdr remote-info)))
-    (when
-        (and
-         curr-path
-         user
-         tramp-path
-         (not
-          (and (tramp-tramp-file-p curr-path)
-               (tramp-sh-handle-file-writable-p curr-path)))
-         (or
-          (not auto-sudoedit-ask)
-          (y-or-n-p
-           (format
-            "This buffer belongs to user %s.  Reopen this buffer as user %s? "
-            user user))))
+    (when (and curr-path
+               user tramp-path (not (and (tramp-tramp-file-p curr-path) (tramp-sh-handle-file-writable-p curr-path)))
+               (or (not auto-sudoedit-ask)
+                   (y-or-n-p (format "This buffer belongs to user %s.  Reopen this buffer as user %s? " user user))))
       ;; We have to tell emacs that this buffer now visits another file (actually the same one, just via tramp sudo)
       ;; We have to do things differently for normal files and for dired
       (when buffer-file-name
@@ -165,4 +153,7 @@ Reopen the buffer via tramp with sudo method."
 
 (provide 'auto-sudoedit)
 
+;; Local Variables:
+;; fill-column: 120
+;; End:
 ;;; auto-sudoedit.el ends here

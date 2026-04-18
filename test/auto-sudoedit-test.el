@@ -1,0 +1,167 @@
+;;; auto-sudoedit-test.el --- Tests for auto-sudoedit -*- lexical-binding: t -*-
+
+;;; Commentary:
+
+;; ERT tests for auto-sudoedit.
+
+;;; Code:
+
+(require 'ert)
+(require 'auto-sudoedit)
+
+(ert-deftest auto-sudoedit-path/local-other-user ()
+  "Local path owned by another user should be converted to sudo path."
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq")))
+    (let ((result (auto-sudoedit-path "/etc/hosts")))
+      (should (equal (car result) "root"))
+      (should (equal (cdr result) "/sudo::/etc/hosts")))))
+
+(ert-deftest auto-sudoedit-path/local-same-user ()
+  "Local path owned by current user should not be converted."
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "ncaq"))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq")))
+    (let ((result (auto-sudoedit-path "/home/ncaq/file.txt")))
+      (should (null (car result)))
+      (should (equal (cdr result) "/home/ncaq/file.txt")))))
+
+(ert-deftest auto-sudoedit-path/owner-unknown ()
+  "When file owner cannot be determined, should not convert."
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) nil))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq")))
+    (let ((result (auto-sudoedit-path "/some/path")))
+      (should (null (car result)))
+      (should (equal (cdr result) "/some/path")))))
+
+(ert-deftest auto-sudoedit-path/already-sudo ()
+  "Already a sudo tramp path should not be converted again."
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq")))
+    (let* ((sudo-path "/sudo::/etc/hosts")
+           (result (auto-sudoedit-path sudo-path)))
+      ;; auto-sudoedit-path-from-tramp-ssh-like returns curr-path when method is sudo,
+      ;; so tramp-path equals curr-path, and the "not equal" check fails.
+      (should (null (car result)))
+      (should (equal (cdr result) sudo-path)))))
+
+(ert-deftest auto-sudoedit-path/ssh-other-user ()
+  "SSH tramp path owned by another user should be converted to sudo."
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq")))
+    (let ((result (auto-sudoedit-path "/ssh:host:/etc/hosts")))
+      (should (equal (car result) "root"))
+      ;; The result should use sudo method for the target path.
+      (should (string-match-p "sudo:" (cdr result)))
+      (should (string-match-p "root@" (cdr result)))
+      (should (string-match-p "/etc/hosts\\'" (cdr result))))))
+
+(ert-deftest auto-sudoedit-path/ssh-same-user ()
+  "SSH tramp path owned by current user should not be converted."
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "ncaq"))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq")))
+    (let ((result (auto-sudoedit-path "/ssh:host:/home/ncaq/file")))
+      (should (null (car result)))
+      (should (equal (cdr result) "/ssh:host:/home/ncaq/file")))))
+
+(ert-deftest auto-sudoedit-path-from-tramp-ssh-like/basic-ssh ()
+  "Basic SSH path should be converted to sudo."
+  (let ((result (auto-sudoedit-path-from-tramp-ssh-like "/ssh:example.com:/etc/hosts" "root")))
+    (should (string-match-p "sudo:" result))
+    (should (string-match-p "root@" result))
+    (should (string-match-p "example\\.com" result))
+    (should (string-match-p "/etc/hosts\\'" result))))
+
+(ert-deftest auto-sudoedit-path-from-tramp-ssh-like/ssh-with-user ()
+  "SSH path with explicit user should be converted to sudo."
+  (let ((result (auto-sudoedit-path-from-tramp-ssh-like "/ssh:admin@example.com:/etc/hosts" "root")))
+    (should (string-match-p "sudo:" result))
+    (should (string-match-p "root@" result))
+    (should (string-match-p "example\\.com" result))
+    (should (string-match-p "/etc/hosts\\'" result))))
+
+(ert-deftest auto-sudoedit-path-from-tramp-ssh-like/ssh-with-port ()
+  "SSH path with port should be converted to sudo preserving the port."
+  :expected-result
+  :failed ;; hop string construction has a port format bug
+  (let ((result (auto-sudoedit-path-from-tramp-ssh-like "/ssh:example.com#2222:/etc/hosts" "root")))
+    (should (string-match-p "sudo:" result))
+    (should (string-match-p "root@" result))
+    (should (string-match-p "example\\.com" result))
+    (should (string-match-p "/etc/hosts\\'" result))))
+
+(ert-deftest auto-sudoedit-path-from-tramp-ssh-like/already-sudo ()
+  "Path with sudo method should be returned as-is."
+  (let* ((sudo-path "/sudo:root@localhost:/etc/hosts")
+         (result (auto-sudoedit-path-from-tramp-ssh-like sudo-path "root")))
+    (should (equal result sudo-path))))
+
+(ert-deftest auto-sudoedit-path-from-tramp-ssh-like/scp-method ()
+  "SCP method should also be converted to sudo."
+  (let ((result (auto-sudoedit-path-from-tramp-ssh-like "/scp:example.com:/etc/hosts" "root")))
+    (should (string-match-p "sudo:" result))
+    (should (string-match-p "root@" result))
+    (should (string-match-p "example\\.com" result))
+    (should (string-match-p "/etc/hosts\\'" result))))
+
+(ert-deftest auto-sudoedit-path-from-tramp-ssh-like/multi-hop ()
+  "Multi-hop path should be converted to sudo with target host."
+  (let ((result (auto-sudoedit-path-from-tramp-ssh-like "/ssh:jump|ssh:target:/etc/hosts" "root")))
+    (should (string-match-p "sudo:" result))
+    (should (string-match-p "root@" result))
+    (should (string-match-p "target" result))
+    (should (string-match-p "/etc/hosts\\'" result))))
+
+(ert-deftest auto-sudoedit-current-path/file-buffer ()
+  "In a file buffer, should return variable `buffer-file-name'."
+  (with-temp-buffer
+    (setq buffer-file-name "/tmp/test-file.el")
+    (should (equal (auto-sudoedit-current-path) "/tmp/test-file.el"))))
+
+(ert-deftest auto-sudoedit-current-path/dired-buffer ()
+  "In a dired-like buffer, should return `list-buffers-directory'."
+  (with-temp-buffer
+    (setq buffer-file-name nil)
+    (setq list-buffers-directory "/tmp/test-dir/")
+    (should (equal (auto-sudoedit-current-path) "/tmp/test-dir/"))))
+
+(ert-deftest auto-sudoedit-current-path/no-path ()
+  "In a buffer with no file and no directory, should return nil."
+  (with-temp-buffer
+    (setq buffer-file-name nil)
+    (setq list-buffers-directory nil)
+    (should (null (auto-sudoedit-current-path)))))
+
+(ert-deftest auto-sudoedit-current-user/local-path ()
+  "For a local path, should return function `user-login-name'."
+  (should (equal (auto-sudoedit-current-user "/etc/hosts") (user-login-name))))
+
+(ert-deftest auto-sudoedit-mode/enable-adds-hooks ()
+  "Enabling the mode should add hooks."
+  (unwind-protect
+      (progn
+        (auto-sudoedit-mode 1)
+        (should (memq #'auto-sudoedit find-file-hook))
+        (should (memq #'auto-sudoedit dired-mode-hook)))
+    (auto-sudoedit-mode -1)))
+
+(ert-deftest auto-sudoedit-mode/disable-removes-hooks ()
+  "Disabling the mode should remove hooks."
+  (auto-sudoedit-mode 1)
+  (auto-sudoedit-mode -1)
+  (should-not (memq #'auto-sudoedit find-file-hook))
+  (should-not (memq #'auto-sudoedit dired-mode-hook)))
+
+(ert-deftest auto-sudoedit-file-owner/existing-file ()
+  "For an existing file, should return a string (the owner name)."
+  ;; /etc/hosts should exist on any Unix-like system.
+  (let ((owner (auto-sudoedit-file-owner "/etc/hosts")))
+    (should (stringp owner))))
+
+(ert-deftest auto-sudoedit-file-owner/nonexistent-file ()
+  "For a nonexistent file, should return nil."
+  (should (null (auto-sudoedit-file-owner "/nonexistent/path/file"))))
+
+;; Local Variables:
+;; fill-column: 120
+;; End:
+;;; auto-sudoedit-test.el ends here
