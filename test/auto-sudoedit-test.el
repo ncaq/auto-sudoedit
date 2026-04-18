@@ -297,6 +297,7 @@
                 ((symbol-function 'revert-buffer) (lambda (&rest _) (setq revert-buffer-called t))))
         (auto-sudoedit)
         (should (string-match-p "sudo:" buffer-file-name))
+        (should (string-match-p "/etc/hosts\\'" buffer-file-name))
         (should revert-buffer-called)))))
 
 (ert-deftest auto-sudoedit/dired-buffer-not-writable ()
