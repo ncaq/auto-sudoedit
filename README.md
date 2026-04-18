@@ -20,15 +20,15 @@ Place it in melpa or directly downloaded by PATH.
 
 If downloaded directly
 
-~~~ el
+```el
 (require 'auto-sudoedit)
-~~~
+```
 
 auto-sudoedit works when minor mode is enabled.
 
-~~~ el
+```el
 (auto-sudoedit-mode 1)
-~~~
+```
 
 If you enable minor mode,
 When you open a file that requires root privileges,
@@ -38,9 +38,9 @@ It will be reopened automatically.
 
 If you find the following message depressing
 
-~~~~
+```
 Autosave file on local temporary directory, do you want to continue? (y or n) y
-~~~~
+```
 
 On a non-shared PC, you can allow some security risk and use.
 Set `tramp-allow-unsafe-temporary-files` to `t`.
@@ -64,15 +64,15 @@ melpaか直接ダウンロードでPATHが通った場所に置きます。
 
 直接ダウンロードした場合は、
 
-~~~el
+```el
 (require 'auto-sudoedit)
-~~~
+```
 
 auto-sudoeditはマイナーモードが有効の時に動きます。
 
-~~~el
+```el
 (auto-sudoedit-mode 1)
-~~~
+```
 
 マイナーモードを有効にしておけば、
 root権限が必要なファイルを開いたときに、
@@ -82,9 +82,9 @@ root権限が必要なファイルを開いたときに、
 
 もし以下のメッセージが鬱陶しいならば、
 
-~~~
+```
 Autosave file on local temporary directory, do you want to continue? (y or n) y
-~~~
+```
 
 共有してないPCでは多少のセキュリティリスクを許容して、
 `tramp-allow-unsafe-temporary-files`
