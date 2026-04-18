@@ -187,7 +187,7 @@
       (should (equal find-file-called-with "/home/ncaq/file.txt")))))
 
 (ert-deftest auto-sudoedit/file-buffer-not-writable ()
-  "Hook should change visited file name when file is not writable by another user."
+  "Hook should reopen file via sudo when owned by a different user."
   (with-temp-buffer
     (setq buffer-file-name "/etc/hosts")
     (let ((auto-sudoedit-ask nil)
@@ -262,14 +262,51 @@
         (auto-sudoedit)
         (should (equal recentf-list (list "/some/other/file")))))))
 
+(ert-deftest auto-sudoedit/tramp-writable-no-change ()
+  "Hook should not reopen when tramp file is already writable."
+  (with-temp-buffer
+    (setq buffer-file-name "/ssh:host:/etc/hosts")
+    (let ((auto-sudoedit-ask nil)
+          (original-name buffer-file-name))
+      (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+                ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
+                ((symbol-function 'tramp-tramp-file-p) (lambda (_) t))
+                ((symbol-function 'tramp-sh-handle-file-writable-p) (lambda (_) t)))
+        (auto-sudoedit)
+        (should (equal buffer-file-name original-name))))))
+
+(ert-deftest auto-sudoedit/dired-buffer-not-writable ()
+  "Hook should update variable `dired-directory' when directory is owned by another user."
+  (with-temp-buffer
+    (setq buffer-file-name nil)
+    (setq dired-directory "/root/")
+    (setq list-buffers-directory "/root/")
+    (setq default-directory "/root/")
+    (let ((auto-sudoedit-ask nil)
+          (recentf-list nil))
+      (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+                ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
+                ((symbol-function 'tramp-tramp-file-p) (lambda (_) nil))
+                ((symbol-function 'dired-unadvertise) (lambda (_) nil))
+                ((symbol-function 'dired-advertise) (lambda () nil))
+                ((symbol-function 'revert-buffer) (lambda (&rest _) nil)))
+        (auto-sudoedit)
+        (should (equal dired-directory "/sudo::/root/"))
+        (should (equal list-buffers-directory "/sudo::/root/"))
+        (should (equal default-directory "/sudo::/root/"))))))
+
 (ert-deftest auto-sudoedit-mode/toggle ()
-  "Toggling the mode twice should restore original hook state."
+  "Enabling then disabling the mode should restore original hook state."
+  (auto-sudoedit-mode -1)
   (let ((original-find-file-hook (copy-sequence find-file-hook))
         (original-dired-mode-hook (copy-sequence dired-mode-hook)))
-    (auto-sudoedit-mode 1)
-    (auto-sudoedit-mode -1)
-    (should (equal find-file-hook original-find-file-hook))
-    (should (equal dired-mode-hook original-dired-mode-hook))))
+    (unwind-protect
+        (progn
+          (auto-sudoedit-mode 1)
+          (auto-sudoedit-mode -1)
+          (should (equal find-file-hook original-find-file-hook))
+          (should (equal dired-mode-hook original-dired-mode-hook)))
+      (auto-sudoedit-mode -1))))
 
 (ert-deftest auto-sudoedit-mode/lighter ()
   "Mode lighter should be \" ASE\"."
