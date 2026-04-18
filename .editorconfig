@@ -1,0 +1,60 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# URLなどは分割困難で長過ぎることがあるためしばしば例外が許可されます。
+# あくまで指針と各種フォーマッターへの指示です。
+max_line_length = 120
+
+# デフォルトのインデントをスペースで2幅にして例外の方を設定することにします。
+# これもcheckerがインデントではないものを誤認することがあるので、
+# あくまで指針と各種フォーマッターへの指示です。
+indent_style = space
+indent_size = 2
+
+# 標準インデントが4の言語。
+[*.{cs,csx,java,kt,kts,php,py,pyi,rs}]
+indent_size = 4
+
+# 標準インデントがタブの言語。
+[{*.go,*.make,*.mk,Makefile}]
+indent_style = tab
+indent_size = unset
+
+# Emacs Lispは独特なインデントルールを持つためeditorconfig側では指定しません。
+[*.el]
+indent_size = unset
+indent_style = unset
+
+[*.md]
+# Markdownには最後にスペース2つ入れて強制改行するシンタックスがあるので末尾のスペースを許可。
+# 注意: なるべく強制改行は使わず、意味で段落して、改行位置はクライアントのデバイスに任せるべきです。
+trim_trailing_whitespace = false
+# MarkdownはCommonMark準拠パーサーでは箇条書きリストのネストは2スペースでも動作し、
+# 番号付きリストはマーカー幅に依存するため固定値での指定は不適切です。
+# よって値を指定しません。
+indent_size = unset
+
+[*.{json,md,nix,yml,yaml}]
+# 設定やドキュメントのファイルはURLなど改行困難なものが多いため行幅制限を無効化します。
+max_line_length = unset
+
+[.env{,.*}]
+# 接続文字列やAPIキーなど長い設定値を含むため行幅制限を無効化します。
+max_line_length = unset
+
+[*.bat]
+charset = latin1
+end_of_line = crlf
+
+[*.ps1]
+charset = utf-8-bom
+end_of_line = crlf
+
+[*.reg]
+charset = utf-8-bom
+end_of_line = crlf

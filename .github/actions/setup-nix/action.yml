@@ -1,0 +1,56 @@
+name: Setup Nix
+description: Install Nix and configure caches
+
+inputs:
+  extra-nix-config:
+    description: Additional nix.conf settings to append
+    required: false
+    default: ""
+  cachix-name:
+    description: Cachix cache name
+    required: false
+    default: ncaq
+  cachix-auth-token:
+    description: Cachix authentication token
+    required: false
+    default: ""
+  niks3-endpoint:
+    description: niks3 server endpoint URL
+    required: false
+    default: "https://niks3-public.ncaq.net"
+
+runs:
+  using: composite
+  steps:
+    - uses: cachix/install-nix-action@616559265b40713947b9c190a8ff4b507b5df49b # v31.10.4
+      with:
+        # セルフホストランナーでうっかり外部からの悪意あるPRを実行許可してしまい、
+        # flake.nixの設定を受け入れると好きなキャッシュを入れられたりしてセキュリティリスクがあるため、
+        # GitHubホステッドランナーでのみflake.nixの設定を自動で受け入れるようにしています。
+        # GitHubホステッドランナーでは`runner.environment`は`github-hosted`になります。
+        # 仮にならなくてもキャッシュリストが読み込まれないだけなのでアクションの実行でわかるため、
+        # セキュリティのリスクはありません。
+        extra_nix_config: |
+          ${{ runner.environment == 'github-hosted' && 'accept-flake-config = true' || '' }}
+          ${{ inputs.extra-nix-config }}
+
+    - name: Setup Cachix cache
+      if: inputs.cachix-name != '' && inputs.cachix-auth-token != ''
+      uses: cachix/cachix-action@1eb2ef646ac0255473d23a5907ad7b04ce94065c # v17
+      with:
+        name: "${{ inputs.cachix-name }}"
+        authToken: "${{ inputs.cachix-auth-token }}"
+        # フォークからのPRのみキャッシュへのプッシュをスキップ
+        skipPush: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+
+    # niks3-actionではskip-pushがpost-build hookに反映されないバグがあり、
+    # push失敗時にビルド全体が巻き込まれて失敗する。
+    # secretが渡らないフォークPRではaction自体をスキップする。
+    # See: https://github.com/aleadag/niks3-action/issues/3
+    - name: Setup niks3 cache
+      if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+      uses: aleadag/niks3-action@8935c349a257dfc311834684bfbd4ab6c4ce6c86 # v0.5.0
+      with:
+        endpoint: "${{ inputs.niks3-endpoint }}"
+        use-oidc: true
+        push-flake-inputs: true

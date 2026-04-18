@@ -1,0 +1,71 @@
+name: release
+
+on:
+  # zizmor: ignore[dangerous-triggers] -- branchesで制限済み、信頼できない入力は使用していない
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+    branches: [master, main]
+
+permissions: {}
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # タグ作成のため
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: "${{ github.event.workflow_run.head_sha }}"
+          persist-credentials: false
+          fetch-depth: 0 # タグの存在確認と作成に全履歴が必要
+      - name: Extract version from Emacs Lisp header
+        id: version
+        run: |
+          set -euo pipefail
+          # Emacs Lispパッケージヘッダの`;; Version:`からバージョンを抽出する。
+          VERSION=$(sed -n 's/^;; Version: *//p' auto-sudoedit.el | tr -d '[:space:]')
+          if [ -z "$VERSION" ]; then
+            echo "No version found in auto-sudoedit.el"
+            exit 1
+          elif ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+            echo "Invalid semver format: $VERSION"
+            exit 1
+          else
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check if tag exists
+        id: check-tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git show-ref --verify --quiet "refs/tags/v$VERSION"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Create tag
+        if: steps.check-tag.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+      - name: Create GitHub Release
+        if: steps.check-tag.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "v$VERSION" --generate-notes
