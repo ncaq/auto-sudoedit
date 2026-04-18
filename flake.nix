@@ -91,7 +91,7 @@
             ert = pkgs.runCommand "auto-sudoedit-ert-test" { } ''
               ${emacsForIt}/bin/emacs -Q --batch \
                 -L ${./.} \
-                -l ${./tests/auto-sudoedit-test.el} \
+                -l ${./test/auto-sudoedit-test.el} \
                 -f ert-run-tests-batch-and-exit
               touch $out
             '';
