@@ -191,16 +191,19 @@
   (with-temp-buffer
     (setq buffer-file-name "/etc/hosts")
     (let ((auto-sudoedit-ask nil)
-          (recentf-list (list "/etc/hosts")))
+          (recentf-list (list "/etc/hosts"))
+          revert-buffer-args)
       (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
                 ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
                 ((symbol-function 'tramp-tramp-file-p) (lambda (_) nil))
                 ((symbol-function 'set-visited-file-name) (lambda (path &optional _) (setq buffer-file-name path)))
-                ((symbol-function 'revert-buffer) (lambda (&rest _) nil)))
+                ((symbol-function 'revert-buffer) (lambda (&rest args) (setq revert-buffer-args args))))
         (auto-sudoedit)
         (should (equal buffer-file-name "/sudo::/etc/hosts"))
         ;; The old path should be removed from recentf-list.
-        (should (null recentf-list))))))
+        (should (null recentf-list))
+        ;; revert-buffer should be called with (t t) to skip confirmation.
+        (should (equal revert-buffer-args '(t t)))))))
 
 (ert-deftest auto-sudoedit/same-user-no-change ()
   "Hook should not change anything when file is owned by current user."
@@ -225,15 +228,17 @@
   (with-temp-buffer
     (setq buffer-file-name "/etc/hosts")
     (let ((auto-sudoedit-ask t)
-          (recentf-list (list "/etc/hosts")))
+          (recentf-list (list "/etc/hosts"))
+          revert-buffer-called)
       (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
                 ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
                 ((symbol-function 'tramp-tramp-file-p) (lambda (_) nil))
                 ((symbol-function 'y-or-n-p) (lambda (_) t))
                 ((symbol-function 'set-visited-file-name) (lambda (path &optional _) (setq buffer-file-name path)))
-                ((symbol-function 'revert-buffer) (lambda (&rest _) nil)))
+                ((symbol-function 'revert-buffer) (lambda (&rest _) (setq revert-buffer-called t))))
         (auto-sudoedit)
-        (should (equal buffer-file-name "/sudo::/etc/hosts"))))))
+        (should (equal buffer-file-name "/sudo::/etc/hosts"))
+        (should revert-buffer-called)))))
 
 (ert-deftest auto-sudoedit/ask-denied ()
   "Hook should not proceed when variable `auto-sudoedit-ask' is t and user denies."
@@ -253,14 +258,16 @@
   (with-temp-buffer
     (setq buffer-file-name "/etc/hosts")
     (let ((auto-sudoedit-ask nil)
-          (recentf-list (list "/some/other/file")))
+          (recentf-list (list "/some/other/file"))
+          revert-buffer-called)
       (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
                 ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
                 ((symbol-function 'tramp-tramp-file-p) (lambda (_) nil))
                 ((symbol-function 'set-visited-file-name) (lambda (path &optional _) (setq buffer-file-name path)))
-                ((symbol-function 'revert-buffer) (lambda (&rest _) nil)))
+                ((symbol-function 'revert-buffer) (lambda (&rest _) (setq revert-buffer-called t))))
         (auto-sudoedit)
-        (should (equal recentf-list (list "/some/other/file")))))))
+        (should (equal recentf-list (list "/some/other/file")))
+        (should revert-buffer-called)))))
 
 (ert-deftest auto-sudoedit/tramp-writable-no-change ()
   "Hook should not reopen when tramp file is already writable."
@@ -283,17 +290,19 @@
     (setq list-buffers-directory "/root/")
     (setq default-directory "/root/")
     (let ((auto-sudoedit-ask nil)
-          (recentf-list nil))
+          (recentf-list nil)
+          revert-buffer-args)
       (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
                 ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
                 ((symbol-function 'tramp-tramp-file-p) (lambda (_) nil))
                 ((symbol-function 'dired-unadvertise) (lambda (_) nil))
                 ((symbol-function 'dired-advertise) (lambda () nil))
-                ((symbol-function 'revert-buffer) (lambda (&rest _) nil)))
+                ((symbol-function 'revert-buffer) (lambda (&rest args) (setq revert-buffer-args args))))
         (auto-sudoedit)
         (should (equal dired-directory "/sudo::/root/"))
         (should (equal list-buffers-directory "/sudo::/root/"))
-        (should (equal default-directory "/sudo::/root/"))))))
+        (should (equal default-directory "/sudo::/root/"))
+        (should (equal revert-buffer-args '(t t)))))))
 
 (ert-deftest auto-sudoedit-mode/toggle ()
   "Enabling then disabling the mode should restore original hook state."
