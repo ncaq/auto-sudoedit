@@ -91,6 +91,7 @@
           };
 
           checks = {
+            inherit emacsForIt;
             ert = pkgs.runCommand "auto-sudoedit-ert-test" { } ''
               ${emacsForIt}/bin/emacs -Q --batch \
                 -L ${./.} \
