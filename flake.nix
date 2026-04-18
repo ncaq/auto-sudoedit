@@ -6,6 +6,10 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    emacs-overlay = {
+      url = "github:nix-community/emacs-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     emacs-elisp-autofmt = {
       url = "git+https://codeberg.org/ideasman42/emacs-elisp-autofmt.git";
       flake = false;
@@ -14,8 +18,10 @@
 
   outputs =
     inputs@{
+      nixpkgs,
       flake-parts,
       treefmt-nix,
+      emacs-overlay,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -31,8 +37,20 @@
       perSystem =
         {
           pkgs,
+          system,
           ...
         }:
+        let
+          emacs-overlay-pkgs = import nixpkgs {
+            inherit system;
+            overlays = [
+              emacs-overlay.overlays.default
+            ];
+          };
+          emacsForIt = emacs-overlay-pkgs.emacsWithPackagesFromPackageRequires {
+            packageElisp = builtins.readFile ./auto-sudoedit.el;
+          };
+        in
         {
           treefmt.config = {
             projectRootFile = "flake.nix";
@@ -69,9 +87,20 @@
             };
           };
 
+          checks = {
+            ert = pkgs.runCommand "auto-sudoedit-ert-test" { } ''
+              ${emacsForIt}/bin/emacs -Q --batch \
+                -L ${./.} \
+                -l ${./tests/auto-sudoedit-test.el} \
+                -f ert-run-tests-batch-and-exit
+              touch $out
+            '';
+          };
+
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
             inherit (pkgs)
+              emacsForIt
               nix-fast-build
               ;
           };
@@ -99,7 +128,7 @@
               gh
 
               # Emacs関連ツール。
-              emacs
+              emacsForIt
             ];
           };
         };
