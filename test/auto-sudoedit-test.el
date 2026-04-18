@@ -135,6 +135,14 @@
   "For a local path, should return function `user-login-name'."
   (should (equal (auto-sudoedit-current-user "/etc/hosts") (user-login-name))))
 
+(ert-deftest auto-sudoedit-current-user/tramp-path ()
+  "For a tramp path, should return the remote user via function `tramp-get-remote-uid'."
+  (cl-letf (((symbol-function 'tramp-get-remote-uid)
+             (lambda (_ id-format)
+               (when (eq id-format 'string)
+                 "remoteuser"))))
+    (should (equal (auto-sudoedit-current-user "/ssh:host:/etc/hosts") "remoteuser"))))
+
 (ert-deftest auto-sudoedit-mode/enable-adds-hooks ()
   "Enabling the mode should add hooks."
   (unwind-protect
