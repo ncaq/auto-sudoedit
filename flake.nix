@@ -8,7 +8,10 @@
     };
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-stable.follows = "nixpkgs";
+      };
     };
     emacs-elisp-autofmt = {
       url = "git+https://codeberg.org/ideasman42/emacs-elisp-autofmt.git";
