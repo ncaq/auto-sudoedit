@@ -1,7 +1,7 @@
 ;;; auto-sudoedit.el --- Auto sudo edit by tramp -*- lexical-binding: t -*-
 
 ;; Author: ncaq <ncaq@ncaq.net>
-;; Version: 1.1.0
+;; Version: 1.1.1
 ;; Package-Requires: ((emacs "26.1")(f "0.19.0"))
 ;; URL: https://github.com/ncaq/auto-sudoedit
 
@@ -78,7 +78,7 @@ NEW-USER is the user for sudo."
                     "")
                   host
                   (if port
-                      (concat port "#")
+                      (concat "#" port)
                     ""))))
     ;; 最終メソッドがsudoである場合それ以上の変換は無意味なので行わない。
     (if (equal method "sudo")
