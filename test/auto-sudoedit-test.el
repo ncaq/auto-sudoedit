@@ -46,6 +46,18 @@ Sudo cannot help with these files, so converting to a tramp sudo path is pointle
       (should (null (car result)))
       (should (equal (cdr result) "/nix/store/some-hash-pkg/etc/config")))))
 
+(ert-deftest auto-sudoedit-path/tramp-skips-owner-writable-check ()
+  "For tramp paths, auto-sudoedit-owner-writable-p should NOT be called to avoid triggering a remote connection."
+  (let ((called nil))
+    (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+              ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
+              ((symbol-function 'auto-sudoedit-owner-writable-p)
+               (lambda (_)
+                 (setq called t)
+                 nil)))
+      (auto-sudoedit-path "/ssh:host:/etc/hosts")
+      (should-not called))))
+
 (ert-deftest auto-sudoedit-path/already-sudo ()
   "Already a sudo tramp path should not be converted again."
   (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
