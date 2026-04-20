@@ -33,10 +33,10 @@
       (should (null (car result)))
       (should (equal (cdr result) "/some/path")))))
 
-(ert-deftest auto-sudoedit-path/immutable-file-not-converted ()
+(ert-deftest auto-sudoedit-path/read-only-file-not-converted ()
   "File not writable even by owner (e.g. NixOS /nix/store)
 should not be converted to sudo path.
-On NixOS, files in /nix/store are immutable (no write permission for anyone).
+On NixOS, files in /nix/store are read-only (no write permission for anyone).
 Sudo cannot help with these files, so converting to a tramp sudo path is pointless."
   (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
             ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))

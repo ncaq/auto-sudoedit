@@ -41,7 +41,7 @@ USER is nil, when we cannot open via sudo."
          ;; The file owner must be different from our current user so that the sudo makes sense
          (not (string= file-owner (auto-sudoedit-current-user curr-path)))
          ;; For local files, the file must be writable by its owner,
-         ;; otherwise sudo cannot help (e.g. immutable files on NixOS /nix/store)
+         ;; otherwise sudo cannot help (e.g. read-only files on NixOS /nix/store)
          ;; Skip this check for tramp paths to avoid triggering a remote connection
          (or (tramp-tramp-file-p curr-path) (auto-sudoedit-owner-writable-p curr-path))
          ;; 変換前のパスと同じでなく(2回めの変換はしない)
