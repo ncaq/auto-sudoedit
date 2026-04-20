@@ -81,8 +81,6 @@
 
 (ert-deftest auto-sudoedit-path-from-tramp-ssh-like/ssh-with-port ()
   "SSH path with port should be converted to sudo preserving the port."
-  :expected-result
-  :failed ;; hop string construction has a port format bug
   (let ((result (auto-sudoedit-path-from-tramp-ssh-like "/ssh:example.com#2222:/etc/hosts" "root")))
     (should (string-match-p "sudo:" result))
     (should (string-match-p "root@" result))
