@@ -38,8 +38,6 @@
 should not be converted to sudo path.
 On NixOS, files in /nix/store are immutable (no write permission for anyone).
 Sudo cannot help with these files, so converting to a tramp sudo path is pointless."
-  :expected-result
-  :failed
   (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
             ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
             ;; Simulate a file with mode #o444 (r--r--r--), not writable by anyone
@@ -182,6 +180,31 @@ Sudo cannot help with these files, so converting to a tramp sudo path is pointle
 (ert-deftest auto-sudoedit-file-owner/nonexistent-file ()
   "For a nonexistent file, should return nil."
   (should (null (auto-sudoedit-file-owner "/nonexistent/path/file"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/writable ()
+  "File with owner write permission should return non-nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o644)))
+    (should (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/not-writable ()
+  "File without owner write permission should return nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o444)))
+    (should-not (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/no-permission ()
+  "File with no permissions at all should return nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o000)))
+    (should-not (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/modes-unknown ()
+  "When file modes cannot be determined, should assume writable."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) nil)))
+    (should (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/group-writable-only ()
+  "File writable by group but not owner should return nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o464)))
+    (should-not (auto-sudoedit-owner-writable-p "/some/path"))))
 
 (ert-deftest auto-sudoedit-current-path/file-takes-priority ()
   "When both variable `buffer-file-name' and variable `list-buffers-directory' are set, file takes priority."
