@@ -33,6 +33,21 @@
       (should (null (car result)))
       (should (equal (cdr result) "/some/path")))))
 
+(ert-deftest auto-sudoedit-path/immutable-file-not-converted ()
+  "File not writable even by owner (e.g. NixOS /nix/store)
+should not be converted to sudo path.
+On NixOS, files in /nix/store are immutable (no write permission for anyone).
+Sudo cannot help with these files, so converting to a tramp sudo path is pointless."
+  :expected-result
+  :failed
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
+            ;; Simulate a file with mode #o444 (r--r--r--), not writable by anyone
+            ((symbol-function 'file-modes) (lambda (_) #o444)))
+    (let ((result (auto-sudoedit-path "/nix/store/some-hash-pkg/etc/config")))
+      (should (null (car result)))
+      (should (equal (cdr result) "/nix/store/some-hash-pkg/etc/config")))))
+
 (ert-deftest auto-sudoedit-path/already-sudo ()
   "Already a sudo tramp path should not be converted again."
   (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
