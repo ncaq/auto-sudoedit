@@ -85,6 +85,7 @@
     (should (string-match-p "sudo:" result))
     (should (string-match-p "root@" result))
     (should (string-match-p "example\\.com" result))
+    (should (string-match-p "#2222" result))
     (should (string-match-p "/etc/hosts\\'" result))))
 
 (ert-deftest auto-sudoedit-path-from-tramp-ssh-like/already-sudo ()
