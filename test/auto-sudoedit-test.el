@@ -33,6 +33,31 @@
       (should (null (car result)))
       (should (equal (cdr result) "/some/path")))))
 
+(ert-deftest auto-sudoedit-path/read-only-file-not-converted ()
+  "File not writable even by owner (e.g. NixOS /nix/store)
+should not be converted to sudo path.
+On NixOS, files in /nix/store are read-only (no write permission for anyone).
+Sudo cannot help with these files, so converting to a tramp sudo path is pointless."
+  (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+            ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
+            ;; Simulate a file with mode #o444 (r--r--r--), not writable by anyone
+            ((symbol-function 'file-modes) (lambda (_) #o444)))
+    (let ((result (auto-sudoedit-path "/nix/store/some-hash-pkg/etc/config")))
+      (should (null (car result)))
+      (should (equal (cdr result) "/nix/store/some-hash-pkg/etc/config")))))
+
+(ert-deftest auto-sudoedit-path/tramp-skips-owner-writable-check ()
+  "For tramp paths, auto-sudoedit-owner-writable-p should NOT be called to avoid triggering a remote connection."
+  (let ((called nil))
+    (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
+              ((symbol-function 'auto-sudoedit-current-user) (lambda (_) "ncaq"))
+              ((symbol-function 'auto-sudoedit-owner-writable-p)
+               (lambda (_)
+                 (setq called t)
+                 nil)))
+      (auto-sudoedit-path "/ssh:host:/etc/hosts")
+      (should-not called))))
+
 (ert-deftest auto-sudoedit-path/already-sudo ()
   "Already a sudo tramp path should not be converted again."
   (cl-letf (((symbol-function 'auto-sudoedit-file-owner) (lambda (_) "root"))
@@ -167,6 +192,31 @@
 (ert-deftest auto-sudoedit-file-owner/nonexistent-file ()
   "For a nonexistent file, should return nil."
   (should (null (auto-sudoedit-file-owner "/nonexistent/path/file"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/writable ()
+  "File with owner write permission should return non-nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o644)))
+    (should (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/not-writable ()
+  "File without owner write permission should return nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o444)))
+    (should-not (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/no-permission ()
+  "File with no permissions at all should return nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o000)))
+    (should-not (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/modes-unknown ()
+  "When file modes cannot be determined, should assume writable."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) nil)))
+    (should (auto-sudoedit-owner-writable-p "/some/path"))))
+
+(ert-deftest auto-sudoedit-owner-writable-p/group-writable-only ()
+  "File writable by group but not owner should return nil."
+  (cl-letf (((symbol-function 'file-modes) (lambda (_) #o464)))
+    (should-not (auto-sudoedit-owner-writable-p "/some/path"))))
 
 (ert-deftest auto-sudoedit-current-path/file-takes-priority ()
   "When both variable `buffer-file-name' and variable `list-buffers-directory' are set, file takes priority."

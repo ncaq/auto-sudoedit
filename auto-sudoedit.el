@@ -1,7 +1,7 @@
 ;;; auto-sudoedit.el --- Auto sudo edit by tramp -*- lexical-binding: t -*-
 
 ;; Author: ncaq <ncaq@ncaq.net>
-;; Version: 1.1.1
+;; Version: 1.1.2
 ;; Package-Requires: ((emacs "26.1")(f "0.19.0"))
 ;; URL: https://github.com/ncaq/auto-sudoedit
 
@@ -40,6 +40,10 @@ USER is nil, when we cannot open via sudo."
          file-owner
          ;; The file owner must be different from our current user so that the sudo makes sense
          (not (string= file-owner (auto-sudoedit-current-user curr-path)))
+         ;; For local files, the file must be writable by its owner,
+         ;; otherwise sudo cannot help (e.g. read-only files on NixOS /nix/store)
+         ;; Skip this check for tramp paths to avoid triggering a remote connection
+         (or (tramp-tramp-file-p curr-path) (auto-sudoedit-owner-writable-p curr-path))
          ;; 変換前のパスと同じでなく(2回めの変換はしない)
          (not (equal curr-path tramp-path)))
         (cons file-owner tramp-path)
@@ -55,6 +59,12 @@ USER is nil, when we cannot open via sudo."
       ;; We can't just go by the user in the tramp filename, because it may have been omitted
       (tramp-get-remote-uid (tramp-dissect-file-name path) 'string)
     (user-login-name)))
+
+(defun auto-sudoedit-owner-writable-p (path)
+  "Check if the owner of PATH has write permission.
+If the file modes cannot be determined, assume writable."
+  (let ((modes (file-modes path)))
+    (or (null modes) (not (zerop (logand modes #o200))))))
 
 (defun auto-sudoedit-path-from-tramp-ssh-like (curr-path new-user)
   "Argument CURR-PATH is tramp path(that use protocols such as ssh).
