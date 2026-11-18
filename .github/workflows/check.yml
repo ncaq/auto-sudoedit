@@ -15,7 +15,7 @@ concurrency:
 jobs:
   nix-fast-build:
     name: nix-fast-build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # niks3 OIDC認証
@@ -28,7 +28,7 @@ jobs:
       - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
   elisp-check:
     name: elisp-check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # niks3 OIDC認証
